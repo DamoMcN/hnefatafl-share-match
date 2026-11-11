@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hnefatafl Match</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#0c1118; --panel:#15202d; --panel2:#1b2a3b; --line:#2d4059; --fg:#ece6d6; --muted:#97a4b6;
+  --ember:#c9482f; --bone:#e9e1cf; --gold:#e0a93f; --good:#6fcf97; --warn:#e8b04a; --bad:#e5604a;
+  --light:#e6dcc0; --dark:#17492c; --played:#f5c26b; --better:#8fe3a6;
+  --display:'Cinzel',Georgia,serif; --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);-webkit-text-size-adjust:100%}
+body{padding-block:16px 32px;padding-inline:max(14px,env(safe-area-inset-left,0px)) max(14px,env(safe-area-inset-right,0px))}
+main{max-width:1040px;margin:0 auto}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{font-family:var(--display);font-weight:800;letter-spacing:.14em;font-size:20px;margin:0}
+.rules{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:860px){.layout{grid-template-columns:minmax(0,560px) minmax(0,1fr);align-items:start}}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center;min-width:0}
+.side b{font-family:var(--display);font-weight:600;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side span{color:var(--muted);font-size:13px;white-space:nowrap}
+.chip{display:inline-block;width:8px;height:22px;border-radius:2px;margin-right:10px;vertical-align:middle}
+.stack{display:flex;flex-direction:column;gap:8px;min-width:0}
+.boardwrap{position:relative;width:100%;aspect-ratio:1/1;background:#0a2015;border:2px solid #0b0f15;border-radius:4px;overflow:hidden;touch-action:manipulation}
+.cell{position:absolute}
+.cell.l{background:var(--light)} .cell.d{background:var(--dark)}
+.cell.sp{background:#0f2c1a}
+.glyph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gold);opacity:.8}
+.glyph svg{width:56%;height:56%}
+.coord{position:absolute;font-size:clamp(7px,1.5vw,10px);font-weight:600;opacity:.65;pointer-events:none}
+.piece{position:absolute;display:flex;align-items:center;justify-content:center;transition:left .32s cubic-bezier(.2,.7,.2,1),top .32s cubic-bezier(.2,.7,.2,1),opacity .28s,transform .28s;z-index:3}
+.piece i{display:block;width:82%;height:82%;border-radius:50%;box-shadow:0 1px 3px #0009;border:2px solid var(--gold);position:relative}
+.piece.A i{background:radial-gradient(circle at 35% 30%,#e0654a,var(--ember) 60%,#8f2c1b)}
+.piece.A i::after{content:"";position:absolute;left:50%;top:50%;width:30%;height:30%;transform:translate(-50%,-52%);border:2px solid var(--bone);border-radius:2px;clip-path:polygon(50% 0,100% 100%,0 100%);background:var(--bone)}
+.piece.D i{background:radial-gradient(circle at 35% 30%,#fffaf0,var(--bone) 65%,#bdb29b);border-color:#a98534}
+.piece.D i::after{content:"";position:absolute;inset:26%;border-radius:50%;border:2px solid #a98534}
+.piece.K i{background:radial-gradient(circle at 35% 30%,#ffe08a,var(--gold) 60%,#a87a1c);border-color:#fff1c4}
+.piece.K i::after{content:"\265A";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4a3207;font-size:clamp(11px,3.6vw,26px);line-height:1}
+.piece.gone{opacity:0;transform:scale(.35) rotate(100deg)}
+.piece.front{z-index:6}
+svg.arrows{position:absolute;inset:0;width:100%;height:100%;z-index:8;pointer-events:none}
+.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+button{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:11px 6px;cursor:pointer;font-weight:600;min-height:44px}
+button:hover{background:#243650} button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+button[disabled]{opacity:.4;cursor:default}
+button.on{background:var(--gold);color:#241a05;border-color:var(--gold)}
+input[type=range]{width:100%;accent-color:var(--gold);margin:4px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.status{font-family:var(--display);font-weight:600;letter-spacing:.06em;font-size:17px}
+.detail{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.sw{display:inline-block;width:14px;height:14px;border:2px solid #000c;margin-right:8px;vertical-align:-2px}
+.grade{font-weight:600;margin-left:6px}
+.g0,.g1{color:var(--good)} .g2{color:var(--warn)} .g3,.g4{color:var(--bad)}
+.list{max-height:min(420px,50vh);overflow:auto;display:flex;flex-direction:column;gap:3px;padding-right:2px}
+.list button{display:flex;justify-content:space-between;gap:8px;text-align:left;font-weight:500;min-height:36px;padding:7px 10px;background:transparent;border-color:transparent}
+.list button.cur{background:var(--gold);color:#241a05}
+.list button.cur .grade{color:#241a05}
+.empty{max-width:520px;margin:12vh auto;text-align:center;color:var(--muted)}
+.empty h2{font-family:var(--display);color:var(--fg)}
+.result{margin-top:2px;color:var(--muted);font-size:13px}
+.badge{position:absolute;z-index:9;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:800;color:#10151c;border:2px solid #0b0f15;box-shadow:0 2px 6px #000a;pointer-events:none;opacity:0;transform:scale(0);font-size:clamp(9px,3.2vw,17px);line-height:1}
+.badge.pop{animation:pop .42s cubic-bezier(.2,1.5,.4,1) .3s forwards}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.35);opacity:1}100%{transform:scale(1);opacity:1}}
+.piece.shake i{animation:shake .4s ease .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5%)}40%{transform:translateX(5%)}60%{transform:translateX(-3%)}80%{transform:translateX(3%)}}
+.start{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#0a1018d9;text-align:center;padding:16px}
+.start button{background:var(--gold);color:#241a05;border-color:var(--gold);font-size:17px;padding:12px 26px}
+.get{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.get p{margin:0;color:var(--muted);font-size:14px;max-width:46ch}
+.get a{display:inline-block;background:var(--gold);color:#241a05;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:6px;min-height:44px}
+.get a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.tools{display:flex;gap:6px}
+@media (prefers-reduced-motion:reduce){.piece{transition:none}.badge.pop{animation:none;opacity:1;transform:scale(1)}.piece.shake i{animation:none}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+(function(){
+  "use strict";
+  var app=document.getElementById('app');
+  var GRADE=["Best move","Good","Inaccuracy","Mistake","Blunder"];
+  var GRADE_TAG=["Best","Good","?!","?","??"];
+  var GRADE_SYM=["\u2605","\u2713","?!","?","??"];
+  var GRADE_COL=["#3fb97a","#8fd694","#e8c25a","#f0903a","#e5503a"];
+  // Set this to where people can download the game (Steam page, itch.io page, GitHub release...).
+  var GAME_URL="https://github.com/DamoMcN/hnefatafl-share-match";
+
+  function b64urlToBytes(s){
+    s=s.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4)s+='=';
+    var bin=atob(s),a=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
+    return a;
+  }
+  async function inflate(bytes){
+    var ds=new DecompressionStream('deflate-raw');
+    var w=ds.writable.getWriter(); w.write(bytes); w.close();
+    var buf=await new Response(ds.readable).arrayBuffer();
+    return new TextDecoder().decode(buf);
+  }
+  function empty(msg,sub){
+    app.innerHTML='<div class="empty"><h2>HNEFATAFL</h2><p>'+msg+'</p><p>'+(sub||'')+'</p></div>';
+  }
+
+  async function boot(){
+    var code=location.hash.replace(/^#/,'');
+    if(!code){empty('Open a shared match link to watch the game here.','Share links are made with the Share match button in Hnefatafl.');return;}
+    var data;
+    try{
+      if(typeof DecompressionStream==='undefined')throw new Error('old');
+      data=JSON.parse(await inflate(b64urlToBytes(code)));
+    }catch(e){
+      empty('This link could not be opened.', e&&e.message==='old'?'Your browser is too old to read it. Try a recent Chrome, Safari or Firefox.':'It may have been cut short when it was copied. Ask for the link again.');
+      return;
+    }
+    render(data);
+  }
+
+  function sq(i,n){return String.fromCharCode(97+i%n)+(Math.floor(i/n)+1);}
+
+  function render(D){
+    var n=D.n, moves=D.m||[], N=moves.length;
+    document.title='Hnefatafl: '+D.an+' vs '+D.dn;
+
+    // pieces and states (cell -> piece id)
+    var types=[], s0=[];
+    for(var i=0;i<n*n;i++){
+      var ch=D.b.charAt(i);
+      if(ch==='.'){s0.push(-1);}
+      else{types.push(ch);s0.push(types.length-1);}
+    }
+    var states=[s0];
+    moves.forEach(function(m){
+      var s=states[states.length-1].slice(), id=s[m[0]];
+      s[m[0]]=-1; s[m[1]]=id;
+      m[2].forEach(function(c){s[c]=-1;});
+      states.push(s);
+    });
+    var pos=function(st){var p=new Array(types.length).fill(-1);st.forEach(function(id,c){if(id>=0)p[id]=c;});return p;};
+
+    function counts(st){var a=0,d=0,k=false;st.forEach(function(id){if(id<0)return;var t=types[id];if(t==='A')a++;else if(t==='D')d++;else k=true;});return {a:a,d:d,k:k};}
+    var resText={A:'Attackers win',D:'Defenders win',X:'Draw',O:'Game in progress'}[D.res]||'';
+
+    app.innerHTML=
+      '<header><h1>HNEFATAFL</h1><div class="rules">'+esc(D.rn||'')+' · '+N+' moves</div></header>'+
+      '<div class="layout"><div class="stack">'+
+        '<div class="side" id="top"></div>'+
+        '<div class="boardwrap" id="board"></div>'+
+        '<div class="side" id="bot"></div>'+
+        '<div class="controls">'+
+          '<button id="first" aria-label="Start">&laquo;</button><button id="prev" aria-label="Back one move">&lsaquo;</button>'+
+          '<button id="play" aria-label="Play">Play</button>'+
+          '<button id="next" aria-label="Forward one move">&rsaquo;</button><button id="last" aria-label="End">&raquo;</button>'+
+        '</div>'+
+        '<input id="scrub" type="range" min="0" max="'+N+'" value="0" aria-label="Move">'+
+      '</div><div class="stack">'+
+        '<div class="card"><div class="status" id="status"></div><div class="result" id="result"></div></div>'+
+        '<div class="card detail" id="detail"></div>'+
+        '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><b style="font-family:var(--display);letter-spacing:.06em">Moves</b><div class="tools"><button id="soundBtn" style="min-height:36px;padding:6px 12px">Sound off</button><button id="arrowsBtn" style="min-height:36px;padding:6px 12px">Arrows on</button></div></div><div class="list" id="list"></div></div>'+
+      '</div></div>'+
+      '<div class="card get" style="margin-top:14px"><p><b style="color:var(--fg)">Like what you see?</b> Hnefatafl is a free Viking board game for phone and PC, with a coach that explains every move.</p><a id="getGame" href="'+esc(GAME_URL)+'" target="_blank" rel="noopener">Get the game</a></div>';
+
+    var boardEl=document.getElementById('board'), cell=100/n;
+    var svgNS='http://www.w3.org/2000/svg';
+    var diamond='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l10 10-10 10L2 12z"/><path d="M12 7l5 5-5 5-5-5z"/></svg>';
+    for(var c=0;c<n*n;c++){
+      var x=c%n,y=Math.floor(c/n);
+      var corner=(x===0||x===n-1)&&(y===0||y===n-1), throne=(x===(n-1)/2&&y===(n-1)/2);
+      var el=document.createElement('div');
+      el.className='cell '+(corner||throne?'sp':((x+y)%2?'l':'d'));
+      el.style.cssText='left:'+x*cell+'%;top:'+(n-1-y)*cell+'%;width:'+cell+'%;height:'+cell+'%';
+      if(corner||throne)el.innerHTML='<div class="glyph">'+diamond+'</div>';
+      boardEl.appendChild(el);
+    }
+    for(var k=0;k<n;k++){
+      var f=document.createElement('div');f.className='coord';f.textContent=String.fromCharCode(97+k);
+      f.style.cssText='left:'+(k*cell+cell*.06)+'%;bottom:.5%;color:'+((k%2)?'#17492c':'#e6dcc0');
+      boardEl.appendChild(f);
+      var r=document.createElement('div');r.className='coord';r.textContent=(k+1);
+      r.style.cssText='left:.8%;top:'+((n-1-k)*cell+cell*.05)+'%;color:'+(((k)%2)?'#e6dcc0':'#17492c');
+      boardEl.appendChild(r);
+    }
+    var pieceEls=types.map(function(t){
+      var p=document.createElement('div');p.className='piece '+t;
+      p.style.cssText='width:'+cell+'%;height:'+cell+'%';
+      p.innerHTML='<i></i>';boardEl.appendChild(p);return p;
+    });
+    var svg=document.createElementNS(svgNS,'svg');svg.setAttribute('class','arrows');svg.setAttribute('viewBox','0 0 '+n+' '+n);
+    boardEl.appendChild(svg);
+    var badge=document.createElement('div');badge.className='badge';boardEl.appendChild(badge);
+
+    var O=D.o||{};
+    var opt=function(k,d){return O[k]===undefined?d:O[k];};
+    var badgeMode=opt('bd',2), soundOn=opt('sn',1)===1, showArrows=opt('ar',1)===1;
+    var speedMs=[1400,900,450][opt('sp',1)]||900;
+    var cur=0, timer=null, ac=null;
+
+    // little synthesised sounds, no files needed
+    function ctx(){try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){ac=null;}return ac;}
+    function tone(f0,f1,dur,type,gain,delay){
+      var a=ctx();if(!a||!soundOn)return;
+      var t=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();
+      o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(gain,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02);
+    }
+    function sfxMove(cap){tone(230,150,.09,'sine',.09);if(cap)tone(150,60,.16,'triangle',.12,.08);}
+    function sfxGrade(g){
+      var d=.3;
+      if(g===0){tone(660,660,.14,'sine',.07,d);tone(880,880,.2,'sine',.06,d+.09);}
+      else if(g===1){tone(520,520,.12,'sine',.06,d);}
+      else if(g===2){tone(240,200,.16,'square',.035,d);}
+      else if(g===3){tone(170,110,.24,'triangle',.12,d);}
+      else{tone(120,45,.4,'sawtooth',.06,d);tone(80,40,.4,'sine',.16,d);}
+    }
+    var colour={A:'var(--ember)',D:'var(--bone)'};
+
+    function centre(c){return {x:c%n+.5,y:n-1-Math.floor(c/n)+.5};}
+    function arrow(from,to,col){
+      var a=centre(from),b=centre(to),dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+      var head=.42,sx=a.x+ux*.18,sy=a.y+uy*.18,ex=b.x-ux*.1,ey=b.y-uy*.1,bx=ex-ux*head,by=ey-uy*head,px=-uy*.22,py=ux*.22;
+      var g=document.createElementNS(svgNS,'g');
+      var line=function(stroke,w){var l=document.createElementNS(svgNS,'line');l.setAttribute('x1',sx);l.setAttribute('y1',sy);l.setAttribute('x2',bx);l.setAttribute('y2',by);l.setAttribute('stroke',stroke);l.setAttribute('stroke-width',w);l.setAttribute('stroke-linecap','round');return l;};
+      var tri=function(fill,grow){var t=document.createElementNS(svgNS,'polygon');
+        t.setAttribute('points',(ex+ux*grow)+','+(ey+uy*grow)+' '+(bx+px*(1+grow))+','+(by+py*(1+grow))+' '+(bx-px*(1+grow))+','+(by-py*(1+grow)));
+        t.setAttribute('fill',fill);return t;};
+      g.appendChild(line('#000c',.2));g.appendChild(tri('#000c',.06));
+      g.appendChild(line(col,.12));g.appendChild(tri(col,0));
+      svg.appendChild(g);
+    }
+
+    function who(id){return id>=0?types[id]:null;}
+    function moveText(i){
+      var m=moves[i],id=states[i][m[0]],t=types[id];
+      return (i+1)+'. '+(t==='K'?'King':t==='A'?'Att':'Def')+' '+sq(m[0],n)+'-'+sq(m[1],n)+(m[2].length?' x'+m[2].length:'');
+    }
+
+    // move list
+    var listEl=document.getElementById('list');
+    var rows=moves.map(function(m,i){
+      var b=document.createElement('button');
+      var g=m.length>3?'<span class="grade g'+m[3]+'">'+GRADE_TAG[m[3]]+'</span>':'';
+      b.innerHTML='<span>'+esc(moveText(i))+'</span>'+g;
+      b.addEventListener('click',function(){stop();go(i+1);});
+      listEl.appendChild(b);return b;
+    });
+
+    function setSide(el,sideLetter,st){
+      var cn=counts(st),isA=sideLetter==='A';
+      el.innerHTML='<b><span class="chip" style="background:'+(isA?'#8f3a29':'#e9e1cf')+'"></span>'+esc(isA?D.an:D.dn)+'</b><span>'+(isA?'Attackers, '+cn.a:'Defenders, '+cn.d+(cn.k?' + King':''))+'</span>';
+    }
+
+    function go(i,fx){
+      var prev=cur;
+      cur=Math.max(0,Math.min(N,i));
+      var st=states[cur],P=pos(st);
+      pieceEls.forEach(function(el,id){
+        var c=P[id],gone=c<0;
+        el.classList.toggle('gone',gone);
+        if(!gone){el.style.left=(c%n)*cell+'%';el.style.top=(n-1-Math.floor(c/n))*cell+'%';}
+      });
+      pieceEls.forEach(function(el){el.classList.remove('front','shake');});
+      badge.className='badge';badge.style.opacity=0;
+      while(svg.firstChild)svg.removeChild(svg.firstChild);
+      var det=document.getElementById('detail'),status=document.getElementById('status');
+      if(cur===0){
+        status.textContent='Start position';
+        det.innerHTML='<span style="color:var(--muted)">Step through the game with the buttons, the slider, or your arrow keys.</span>';
+      }else{
+        var m=moves[cur-1];
+        pieceEls[states[cur][m[1]]].classList.add('front');
+        status.textContent='Move '+cur+' of '+N;
+        var h='<div><span class="sw" style="background:var(--played)"></span>Played '+sq(m[0],n)+' to '+sq(m[1],n)+(m[3]!==undefined?'<span class="grade g'+m[3]+'">'+GRADE[m[3]]+'</span>':'')+(m[2].length?' · captured '+m[2].length:'')+'</div>';
+        if(m.length>5)h+='<div><span class="sw" style="background:var(--better)"></span>Better was '+sq(m[4],n)+' to '+sq(m[5],n)+'</div>';
+        else if(m[3]!==undefined)h+='<div style="color:var(--muted)">That was the best move.</div>';
+        det.innerHTML=h;
+        var gr=m[3],cap=m[2].length>0,sz=cell*.66;
+        var showBadge=gr!==undefined&&(badgeMode===2||(badgeMode===1&&gr>=3));
+        if(showBadge){
+          var tc=m[1],bx=tc%n,by=n-1-Math.floor(tc/n);
+          badge.textContent=GRADE_SYM[gr];badge.style.cssText='left:'+(bx*cell+cell*.5)+'%;top:'+(by*cell-cell*.12)+'%;width:'+sz+'%;height:'+sz+'%;background:'+GRADE_COL[gr];
+          badge.className='badge';void badge.offsetWidth;
+          if(fx)badge.className='badge pop';else{badge.style.opacity=1;badge.style.transform='scale(1)';}
+          if(fx&&gr>=3)pieceEls[states[cur][m[1]]].classList.add('shake');
+        }
+        if(fx){sfxMove(cap);if(gr!==undefined&&(badgeMode>0))sfxGrade(gr);}
+        if(showArrows){
+          if(m.length>5)arrow(m[4],m[5],'#8fe3a6');
+          arrow(m[0],m[1],'#f5c26b');
+        }
+      }
+      setSide(document.getElementById('top'),'D',st);
+      setSide(document.getElementById('bot'),'A',st);
+      rows.forEach(function(b,k){b.classList.toggle('cur',k===cur-1);});
+      if(cur>0)rows[cur-1].scrollIntoView({block:'nearest'});
+      document.getElementById('scrub').value=cur;
+      document.getElementById('first').disabled=document.getElementById('prev').disabled=cur===0;
+      document.getElementById('next').disabled=document.getElementById('last').disabled=cur===N;
+      document.getElementById('result').textContent=cur===N?(resText+(D.why?' · '+D.why:'')):'';
+    }
+
+    function stop(){if(timer){clearInterval(timer);timer=null;document.getElementById('play').textContent='Play';}}
+    function play(){
+      if(timer){stop();return;}
+      if(cur>=N)go(0);
+      document.getElementById('play').textContent='Pause';
+      timer=setInterval(function(){if(cur>=N){stop();return;}go(cur+1,true);},speedMs);
+    }
+    document.getElementById('first').onclick=function(){stop();go(0);};
+    document.getElementById('prev').onclick=function(){stop();go(cur-1,true);};
+    document.getElementById('next').onclick=function(){stop();go(cur+1,true);};
+    document.getElementById('last').onclick=function(){stop();go(N);};
+    document.getElementById('play').onclick=play;
+    document.getElementById('scrub').oninput=function(e){stop();go(+e.target.value);};
+    var arrowsBtn=document.getElementById('arrowsBtn'),soundBtn=document.getElementById('soundBtn');
+    function syncTools(){arrowsBtn.classList.toggle('on',showArrows);arrowsBtn.textContent=showArrows?'Arrows on':'Arrows off';soundBtn.classList.toggle('on',soundOn);soundBtn.textContent=soundOn?'Sound on':'Sound off';}
+    arrowsBtn.onclick=function(){showArrows=!showArrows;syncTools();go(cur);};
+    soundBtn.onclick=function(){soundOn=!soundOn;syncTools();if(soundOn){ctx();tone(520,520,.1,'sine',.07);}};
+    syncTools();
+    document.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'){stop();go(cur+1,true);}else if(e.key==='ArrowLeft'){stop();go(cur-1,true);}
+      else if(e.key===' '&&e.target.tagName!=='BUTTON'){e.preventDefault();play();}
+    });
+    // where the match opens: start, the biggest mistake, or the end
+    var startAt=opt('st',1),startIdx=0;
+    if(startAt===2)startIdx=N;
+    else if(startAt===1){var worst=-1,wi=0;moves.forEach(function(m,i){if(m[3]!==undefined&&m[3]>worst&&m[3]>=2){worst=m[3];wi=i+1;}});startIdx=wi;}
+    if(opt('ap',0)===1){
+      go(0);
+      var ov=document.createElement('div');ov.className='start';
+      ov.innerHTML='<b style="font-family:var(--display);font-size:20px;letter-spacing:.06em">'+esc(D.an)+' vs '+esc(D.dn)+'</b><span style="color:var(--muted)">'+esc(resText)+'</span><button id="watch">Watch the match</button>';
+      boardEl.appendChild(ov);
+      document.getElementById('watch').onclick=function(){ov.remove();ctx();play();};
+    }else go(startIdx);
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  window.addEventListener('hashchange',function(){location.reload();});
+  boot();
+})();
+</script>
+</body>
+</html>
