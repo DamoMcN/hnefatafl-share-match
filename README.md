@@ -22,9 +22,6 @@ Browser support
 
 A recent Chrome, Edge, Safari (16.4 or newer) or Firefox. Older browsers show a message instead of the match.
 
-Changing the page
-
-Edit index.html and commit it. GitHub Pages republishes in a minute or two. The "Get the game" link is the GAME_URL value near the top of the script.
 
 Licence
 
