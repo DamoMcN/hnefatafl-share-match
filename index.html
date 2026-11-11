@@ -329,7 +329,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:4px 0}
     });
     // where the match opens: start, the biggest mistake, or the end
     var startAt=opt('st',1),startIdx=0;
-    if(startAt===2)startIdx=N;
+    if(O.si!==undefined)startIdx=Math.max(0,Math.min(N,O.si));
+    else if(startAt===2)startIdx=N;
     else if(startAt===1){var worst=-1,wi=0;moves.forEach(function(m,i){if(m[3]!==undefined&&m[3]>worst&&m[3]>=2){worst=m[3];wi=i+1;}});startIdx=wi;}
     if(opt('ap',0)===1){
       go(0);
